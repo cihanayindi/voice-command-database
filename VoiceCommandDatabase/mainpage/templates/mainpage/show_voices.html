@@ -281,6 +281,8 @@
 <script>
 let currentlyPlaying = null;
 let currentButton = null;
+const CURRENT_USER = "{{ user|escapejs }}";
+
 
 function playAudio(url, button) {
     const audioPlayer = document.getElementById('audio-player');
@@ -325,20 +327,51 @@ function playAudio(url, button) {
 function filterTable() {
     const genderFilter = document.getElementById('gender-filter').value.toLowerCase();
     const wordFilter = document.getElementById('word-filter').value.toLowerCase();
-    const userFilter = document.getElementById('user-filter').value.toLowerCase();
-    console.log(genderFilter, wordFilter, userFilter);
+    const isSuperUser = document.getElementById('user-filter') !== null;
+    
+    // Get all table rows
     const rows = document.querySelectorAll('tbody tr');
-
+    
     rows.forEach(row => {
-        const gender = row.children[6].textContent.toLowerCase();
-        const word = row.children[1].textContent.toLowerCase();
-        const user = row.children[0].textContent.toLowerCase();
+        let shouldShow = true;
         
-        const genderMatch = !genderFilter || gender === genderFilter;
-        const wordMatch = !wordFilter || word === wordFilter;
-        const userMatch = !userFilter || user === userFilter;
-
-        row.style.display = genderMatch && wordMatch && userMatch ? '' : 'none';
+        // Get the cells based on user type
+        if (isSuperUser) {
+            // Super user view (with user column)
+            const userCell = row.children[0];
+            const wordCell = row.children[1];
+            const genderCell = row.children[6]; // Gender is at index 6 for super users
+            
+            const userFilter = document.getElementById('user-filter').value.toLowerCase();
+            const rowGender = genderCell.getAttribute('data-gender').toLowerCase();
+            
+            // Apply filters
+            if (userFilter && userCell.textContent.toLowerCase() !== userFilter) {
+                shouldShow = false;
+            }
+            if (wordFilter && !wordCell.textContent.toLowerCase().includes(wordFilter)) {
+                shouldShow = false;
+            }
+            if (genderFilter && genderFilter !== rowGender) {
+                shouldShow = false;
+            }
+        } else {
+            // Normal user view (without user column)
+            const wordCell = row.children[0];
+            const genderCell = row.children[5]; // Gender is at index 5 for normal users
+            const rowGender = genderCell.getAttribute('data-gender').toLowerCase();
+            
+            // Apply filters
+            if (wordFilter && !wordCell.textContent.toLowerCase().includes(wordFilter)) {
+                shouldShow = false;
+            }
+            if (genderFilter && genderFilter !== rowGender) {
+                shouldShow = false;
+            }
+        }
+        
+        // Show or hide the row
+        row.style.display = shouldShow ? '' : 'none';
     });
 }
 
